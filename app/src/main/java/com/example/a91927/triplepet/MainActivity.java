@@ -7,9 +7,10 @@ import android.view.View;
 import android.widget.Button;
 
 import com.example.a91927.triplepet.service.BackService;
+import com.example.a91927.triplepet.view.PetView;
 
 public class MainActivity extends AppCompatActivity {
-
+    PetView pv;
     Button button;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
