@@ -12,19 +12,6 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-                <com.example.a91927.triplepet.view.PetView
-                    android:id="@+id/view"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
-                    android:visibility="visible" />
-
-                <Button
-                    android:id="@+id/btn"
-                    android:layout_width="100dp"
-                    android:layout_height="100dp"
-                    android:text="Button"
-                    tools:layout_editor_absoluteX="148dp"
-                    tools:layout_editor_absoluteY="350dp" />
         </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>

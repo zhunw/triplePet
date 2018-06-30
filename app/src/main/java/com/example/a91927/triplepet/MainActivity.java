@@ -3,29 +3,18 @@ package com.example.a91927.triplepet;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
 
 import com.example.a91927.triplepet.service.BackService;
-import com.example.a91927.triplepet.view.PetView;
 
 public class MainActivity extends AppCompatActivity {
-    PetView pv;
-    Button button;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        button = (Button) findViewById(R.id.btn);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                clickFun();
-            }
-        });
+        startIntent();
     }
 
-    public void clickFun() {
+    public void startIntent() {
         Intent intent = new Intent(this.getApplicationContext(), BackService.class);
         this.startService(intent);
     }

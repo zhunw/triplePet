@@ -16,7 +16,8 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.example.a91927.triplepet.R;
-import com.example.a91927.triplepet.view.PetView;
+import com.example.a91927.triplepet.view.BasePetView;
+import com.example.a91927.triplepet.view.PikachuView;
 
 import static java.lang.Thread.sleep;
 
@@ -26,12 +27,12 @@ import static java.lang.Thread.sleep;
 
 public class BackService extends Service {
     Context context;
-    WindowManager mWM; // WindowManager
-    WindowManager.LayoutParams layoutParams; // WindowManager参数
-    PetView pet;
-    DrawRunnable drawRunnable;
+    WindowManager windowManager;
+    WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
+    BasePetView petView;
+    String petType = "Pikachu";
+    DrawRunnable drawRunnable = new DrawRunnable();
     Handler handler;
-    int r = 0;
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -40,26 +41,11 @@ public class BackService extends Service {
     public void onCreate() {
         super.onCreate();
         context = getApplicationContext();
-        pet = new PetView(this);
-        drawRunnable = new DrawRunnable();
-//        pet =  LayoutInflater.from(this).inflate(R.layout.pet_layout, null);
-        mWM = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        layoutParams = new WindowManager.LayoutParams();
-        pet.setBackgroundColor(Color.TRANSPARENT);
-        layoutParams.type=WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
-        layoutParams.format = PixelFormat.RGBA_8888;
-        layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL| WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-        layoutParams.gravity = Gravity.LEFT|Gravity.TOP;
-        layoutParams.type = 2002; // type是关键，这里的2002表示系统级窗口，或2003。
-        layoutParams.flags = 40;// 这句设置桌面可控
-        layoutParams.x = (int)pet.x;
-        layoutParams.y = (int)pet.y;
-//        layoutParams.x = -100;
-//        layoutParams.y = 0;
-        layoutParams.width = 100;
-        layoutParams.height = 100;
-        layoutParams.format = 128; // 透明
-        mWM.addView(pet, layoutParams);// 这句是重点 给WindowManager中丢入刚才设置的值
+        petView = initPetView();
+        windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        petView.setBackgroundColor(Color.TRANSPARENT);
+        initLayoutParams();
+        windowManager.addView(petView, layoutParams);// 这句是重点 给WindowManager中丢入刚才设置的值
         handler = new Handler();
         handler.post(drawRunnable);
     }
@@ -67,26 +53,49 @@ public class BackService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         return super.onStartCommand(intent, flags, startId);
     }
+    BasePetView initPetView() {
+        BasePetView petView;
+        switch(petType) {
+            case "Pikachu":
+                petView = new PikachuView(this);
+                break;
+            default:
+                petView = new PikachuView(this);
+                break;
+        }
+        return petView;
+    }
+    void initLayoutParams() {
+        layoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+        layoutParams.format = PixelFormat.RGBA_8888;
+        layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL| WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        layoutParams.gravity = Gravity.LEFT|Gravity.TOP;
+        layoutParams.type = 2002; // type是关键，这里的2002表示系统级窗口，或2003。
+        layoutParams.flags = 40;// 这句设置桌面可控
+        layoutParams.x = (int)petView.getX();
+        layoutParams.y = (int)petView.getY();
+        layoutParams.width = petView.getW();
+        layoutParams.height = petView.getH();
+        layoutParams.format = -3; // 透明
+    }
 
     class DrawRunnable implements Runnable {
         @Override
         public void run() {
-//            pet.invalidate();
-//            int xx[] = {100, 200, 300, 400};
-//            int yy[] = {100, 200, 300, 400};
-//            r = (r+1) % 4;
             try {
-//                sleep(1000);
-                int x = (int)pet.x;
-                int y = (int)pet.y;
+                int x = (int)petView.getX();
+                int y = (int)petView.getY();
                 layoutParams.x = x;
                 layoutParams.y = y;
-                Log.i("posi", String.format("bmp:%d %d", x, y));
-//                Log.i("posi", String.format("touch:%d %d", (int)pet.touchX, (int)pet.touchY));
-                pet.invalidate();
-                mWM.updateViewLayout(pet, layoutParams);
-                handler.post(drawRunnable);
-//            mWM.removeViewImmediate(pet);
+//                Log.i("posi", String.format("bmp:%d %d", x, y));
+//                Log.i("posi", String.format("touch:%d %d", (int)petView.touchX, (int)petView.touchY));
+                petView.invalidate();
+                windowManager.updateViewLayout(petView, layoutParams);
+                if(petView.getOnPressing())
+                    handler.post(drawRunnable);
+                else
+                    handler.postDelayed(drawRunnable, 100);
+//            windowManager.removeViewImmediate(petView);
             }
             catch (Exception e) {
                 e.printStackTrace();
