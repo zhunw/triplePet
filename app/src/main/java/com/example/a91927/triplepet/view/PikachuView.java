@@ -18,9 +18,6 @@ import android.view.MotionEvent;
 import com.example.a91927.triplepet.R;
 
 public class PikachuView extends BasePetView {
-    private final int numOfBmp = 5;
-    private int idx = 0;
-    private Bitmap[] bmpPikachu = new Bitmap[numOfBmp];
     /* ************************** */
     public PikachuView(Context context) {
         super(context);
@@ -40,6 +37,8 @@ public class PikachuView extends BasePetView {
         Log.i("screen", String.format("w:%d, h:%d", screenW, screenH));
 //        init(sp);
         initBmp();
+        //test
+
     }
     public PikachuView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -52,14 +51,16 @@ public class PikachuView extends BasePetView {
 
     /* **************************** */
     public void initBmp() {
+        numOfBmp = 5;
+        bmpArray = new Bitmap[numOfBmp];
         String str = "stand_";
-        for(int i = 1; i <= 5; i++) {
+        for(int i = 1; i <= numOfBmp; i++) {
             String name = str + Integer.toString(i);// + ".png";
-            bmpPikachu[i-1] = decodeResource(res, getRawID(name));
+            bmpArray[i-1] = decodeResource(res, getRawID(name));
         }
         hide_left = BitmapFactory.decodeResource(res, R.drawable.hide_left);
         hide_right = BitmapFactory.decodeResource(res, R.drawable.hide_right);
-//        bmpPikachu[0] = BitmapFactory.decodeResource(getResources(), R.raw.stand_1);
+//        bmpArray[0] = BitmapFactory.decodeResource(getResources(), R.raw.stand_1);
     }
     @Override
     protected void onDraw(Canvas canvas) {
@@ -69,24 +70,24 @@ public class PikachuView extends BasePetView {
         switch(pet_state) {
             case NORMAL:
                 if(onPressing) {
-                    drawedBitmap = bmpPikachu[0];
+                    drawedBitmap = bmpArray[0];
                 }
                 else {
-                    drawedBitmap = bmpPikachu[idx];
-                    idx = (idx+1) % numOfBmp;
+                    drawedBitmap = bmpArray[idx];
+//                    idx = (idx+1) % numOfBmp;
                 }
                 break;
             case HIDE_LEFT:
                 if(hide_left != null)
                     drawedBitmap = hide_left;
                 else //for secure
-                    drawedBitmap = bmpPikachu[0];
+                    drawedBitmap = bmpArray[0];
                 break;
             case HIDE_RIGHT:
                 if(hide_right != null)
                     drawedBitmap = hide_right;
                 else //for secure
-                    drawedBitmap = bmpPikachu[0];
+                    drawedBitmap = bmpArray[0];
                 break;
         }
 
@@ -105,7 +106,7 @@ public class PikachuView extends BasePetView {
         touchY = event.getRawY();
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
-//                touchDownTime = System.currentTimeMillis();
+                touchDownTime = System.currentTimeMillis();
                 if(!onPressing) onPressing = true;
 //                onActionChange(FLAG_UP);
                 titleBarH = touchY - event.getY() - y;
@@ -118,6 +119,7 @@ public class PikachuView extends BasePetView {
             case MotionEvent.ACTION_UP:
                 if(onPressing) onPressing = false;
                 titleBarH = 0;
+                diffTime = System.currentTimeMillis() - touchDownTime;
                 // 贴边
                 if(x < 50) {
                     x = 0;
@@ -131,6 +133,14 @@ public class PikachuView extends BasePetView {
                     pet_state = PET_STATE.NORMAL;
                 break;
         }
+        //clean
+        touchAnimAlpha = false;
+        //for special ainm
+        float touchx = event.getX(), touchy = event.getY();
+        if(x < W/2 && y < H/2) {
+            touchAnimAlpha = true;
+        }
+        //
         return true;
     }
 

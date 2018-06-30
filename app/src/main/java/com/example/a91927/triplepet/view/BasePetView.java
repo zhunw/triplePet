@@ -42,6 +42,7 @@ public class BasePetView extends View {
     /**公共，简化*/
     protected Matrix matrix;
     /* ************** zhunw add *********** */
+
     /* 被画的bitmap */
     protected  Bitmap drawedBitmap;
     protected  Bitmap hide_left;
@@ -49,6 +50,13 @@ public class BasePetView extends View {
 
     protected enum PET_STATE {NORMAL, HIDE_LEFT, HIDE_RIGHT};
     protected  PET_STATE pet_state = PET_STATE.NORMAL;
+
+    long diffTime;
+    boolean touchAnimAlpha = false;
+
+    protected int numOfBmp;
+    protected int idx = 0;
+    protected Bitmap[] bmpArray;
 
     /* ************* zhunw end ************* */
     /**用户选择的动画数组，随机出现*/
@@ -113,12 +121,7 @@ public class BasePetView extends View {
     public long getTouchDownTime() {
         return touchDownTime;
     }
-    public void setOnPressing(boolean onPerson) {
-        this.onPressing = onPerson;
-    }
-    public boolean getOnPressing() {
-        return onPressing;
-    }
+
     protected Bitmap decodeResource(Resources resources, int id) {
         TypedValue value = new TypedValue();
         resources.openRawResource(id, value);
@@ -131,6 +134,20 @@ public class BasePetView extends View {
             canvas.drawBitmap(bitmap, matrix, paint);
         }
     }
+
+    /*  zhunw method */
+    public void setOnPressing(boolean onPerson) {
+        this.onPressing = onPerson;
+    }
+    public boolean getOnPressing() {
+        return onPressing;
+    }
+    public long getDiffTime() {
+        return diffTime;
+    }
+    public boolean getTouchAnimAlpha() {
+        return touchAnimAlpha;
+    }
     public int  getRawID(String Name) {
         int resId = 0;
         try {
@@ -141,4 +158,14 @@ public class BasePetView extends View {
         }
         return resId;
     }
+    public void setIdx(int i) {
+        idx = i;
+    }
+    public int getIdx() {
+        return idx;
+    }
+    public int getNumOfBmp()  {
+        return numOfBmp;
+    }
+
 }

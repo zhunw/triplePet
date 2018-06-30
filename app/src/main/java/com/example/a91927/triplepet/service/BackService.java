@@ -13,6 +13,8 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Toast;
 
 import com.example.a91927.triplepet.R;
@@ -32,6 +34,7 @@ public class BackService extends Service {
     BasePetView petView;
     String petType = "Pikachu";
     DrawRunnable drawRunnable = new DrawRunnable();
+    DisturbRunnable disturbRunnable = new DisturbRunnable();
     Handler handler;
     @Override
     public IBinder onBind(Intent intent) {
@@ -48,6 +51,7 @@ public class BackService extends Service {
         windowManager.addView(petView, layoutParams);// 这句是重点 给WindowManager中丢入刚才设置的值
         handler = new Handler();
         handler.post(drawRunnable);
+        handler.post(disturbRunnable);
     }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -70,7 +74,9 @@ public class BackService extends Service {
         layoutParams.format = PixelFormat.RGBA_8888;
         layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL| WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         layoutParams.gravity = Gravity.LEFT|Gravity.TOP;
-        layoutParams.type = 2002; // type是关键，这里的2002表示系统级窗口，或2003。
+        layoutParams.type = 2002;
+//        layoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
+//        layoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         layoutParams.flags = 40;// 这句设置桌面可控
         layoutParams.x = (int)petView.getX();
         layoutParams.y = (int)petView.getY();
@@ -83,6 +89,17 @@ public class BackService extends Service {
         @Override
         public void run() {
             try {
+                if(petView.getDiffTime() > 3000) {
+                    windowManager.removeViewImmediate(petView);
+                    return;
+                }
+//                if(petView.getTouchAnimAlpha()) {
+////                    Animation animAlpha = AnimationUtils.loadAnimation(getApplicationContext(),
+////                            R.anim.tween_alpha);
+////                    petView.startAnimation(animAlpha);
+////                    sleep(3000);
+//                    ;
+//                }
                 int x = (int)petView.getX();
                 int y = (int)petView.getY();
                 layoutParams.x = x;
@@ -91,11 +108,25 @@ public class BackService extends Service {
 //                Log.i("posi", String.format("touch:%d %d", (int)petView.touchX, (int)petView.touchY));
                 petView.invalidate();
                 windowManager.updateViewLayout(petView, layoutParams);
-                if(petView.getOnPressing())
+//                if(petView.getOnPressing())
                     handler.post(drawRunnable);
-                else
-                    handler.postDelayed(drawRunnable, 100);
+//                    handler.postAtFrontOfQueue(drawRunnable);
+//                else
+//                    handler.postDelayed(drawRunnable, 100);
 //            windowManager.removeViewImmediate(petView);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    class DisturbRunnable implements Runnable {
+        @Override
+        public void run() {
+            try {
+                petView.setIdx((petView.getIdx() + 1) % petView.getNumOfBmp() );
+                handler.postDelayed(disturbRunnable , 500);
             }
             catch (Exception e) {
                 e.printStackTrace();
