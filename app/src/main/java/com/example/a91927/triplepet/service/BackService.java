@@ -45,6 +45,8 @@ public class BackService extends Service {
         super.onCreate();
         context = getApplicationContext();
         petView = initPetView();
+        if(petView != null)
+        Log.i("log", "petView not null");
         windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         petView.setBackgroundColor(Color.TRANSPARENT);
         initLayoutParams();
@@ -82,34 +84,43 @@ public class BackService extends Service {
         layoutParams.y = (int)petView.getY();
         layoutParams.width = petView.getW();
         layoutParams.height = petView.getH();
-        layoutParams.format = -3; // 透明
+//        layoutParams.format = -3; // 透明
     }
 
     class DrawRunnable implements Runnable {
         @Override
         public void run() {
             try {
-                if(petView.getDiffTime() > 3000) {
+                if(petView.getDiffTime() > 4000) {
                     windowManager.removeViewImmediate(petView);
                     return;
                 }
-//                if(petView.getTouchAnimAlpha()) {
-////                    Animation animAlpha = AnimationUtils.loadAnimation(getApplicationContext(),
-////                            R.anim.tween_alpha);
-////                    petView.startAnimation(animAlpha);
-////                    sleep(3000);
-//                    ;
+                else if(petView.getTouchAnimAlpha()) {
+                    petView.startAlphaAnimation();
+                    petView.setUntouchable(true);
+                    handler.postDelayed(new StopAnimRunnable(), 2000);
+                }
+                else if(petView.getTouchAnimSize()) {
+                    petView.startSizeAnimation();
+                    petView.setUntouchable(true);
+                    handler.postDelayed(new StopSizeAnimRunnable(), 2000);
+                }
+//                else {
+                    int x = (int)petView.getX();
+                    int y = (int)petView.getY();
+                    layoutParams.x = x;
+                    layoutParams.y = y;
+                    //
+                    int w = petView.getW();
+                    int h = petView.getH();
+                    layoutParams.width = w;
+                    layoutParams.height = h;
+//                Log.i("log", String.format("size:%d %d", w, h));
+                    petView.invalidate();
+                    windowManager.updateViewLayout(petView, layoutParams);
 //                }
-                int x = (int)petView.getX();
-                int y = (int)petView.getY();
-                layoutParams.x = x;
-                layoutParams.y = y;
-//                Log.i("posi", String.format("bmp:%d %d", x, y));
-//                Log.i("posi", String.format("touch:%d %d", (int)petView.touchX, (int)petView.touchY));
-                petView.invalidate();
-                windowManager.updateViewLayout(petView, layoutParams);
 //                if(petView.getOnPressing())
-                    handler.post(drawRunnable);
+                handler.post(drawRunnable);
 //                    handler.postAtFrontOfQueue(drawRunnable);
 //                else
 //                    handler.postDelayed(drawRunnable, 100);
@@ -127,6 +138,32 @@ public class BackService extends Service {
             try {
                 petView.setIdx((petView.getIdx() + 1) % petView.getNumOfBmp() );
                 handler.postDelayed(disturbRunnable , 500);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    class StopAnimRunnable implements Runnable {
+        @Override
+        public void run() {
+            try {
+                petView.stopAnimation();
+                petView.setUntouchable(false);
+                Log.i("stop", "stop");
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    class StopSizeAnimRunnable implements Runnable {
+        @Override
+        public void run() {
+            try {
+                petView.stopSizeAnimation();
+                petView.setUntouchable(false);
+                Log.i("stop", "stop");
             }
             catch (Exception e) {
                 e.printStackTrace();

@@ -35,6 +35,7 @@ public class BasePetView extends View {
     protected float x, y;
     /**触摸时的坐标*/
     protected float touchX, touchY;
+    protected float touchinx, touchiny;
     /**触摸状态(长按用),0开启未触摸；1开启且触摸*/
     protected boolean onPressing = false;
     /**触摸down的时间*/
@@ -47,12 +48,17 @@ public class BasePetView extends View {
     protected  Bitmap drawedBitmap;
     protected  Bitmap hide_left;
     protected  Bitmap hide_right;
+    protected  Bitmap bmp_tmp;
 
-    protected enum PET_STATE {NORMAL, HIDE_LEFT, HIDE_RIGHT};
+    protected enum PET_STATE {NORMAL, HIDE_LEFT, HIDE_RIGHT, ONBOOM};
     protected  PET_STATE pet_state = PET_STATE.NORMAL;
 
     long diffTime;
     boolean touchAnimAlpha = false;
+    boolean touchAnimSize = false;
+    boolean untouchable = false;
+    final int init_size = 300;
+    final float boom_rate = 1.5f;
 
     protected int numOfBmp;
     protected int idx = 0;
@@ -90,12 +96,16 @@ public class BasePetView extends View {
     /**** public 需继承的*******************************************************/
 //    public void initial(SharedPreferences sp) {
 //    }
-    public void initBmp() {
+    protected void initBmp() {
         return;
     }
     public boolean onTouchEvent(MotionEvent event) {
         return true;
     }
+    public void startAlphaAnimation() {return; }
+    public void startSizeAnimation() {return; }
+    public void stopAnimation() { return;}
+    public void stopSizeAnimation() { return;}
     /********************************************************************/
     /**测量屏幕高宽,由于会出现屏幕旋转问题，所以需要改变*/
     public void measureScreen(){
@@ -148,6 +158,9 @@ public class BasePetView extends View {
     public boolean getTouchAnimAlpha() {
         return touchAnimAlpha;
     }
+    public boolean getTouchAnimSize() {
+        return touchAnimSize;
+    }
     public int  getRawID(String Name) {
         int resId = 0;
         try {
@@ -167,5 +180,7 @@ public class BasePetView extends View {
     public int getNumOfBmp()  {
         return numOfBmp;
     }
-
+    public void setUntouchable(boolean b) {
+        untouchable = b;
+    }
 }
