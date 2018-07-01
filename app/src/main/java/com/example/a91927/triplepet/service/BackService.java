@@ -1,8 +1,12 @@
 package com.example.a91927.triplepet.service;
 
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.os.Handler;
@@ -15,9 +19,11 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import com.example.a91927.triplepet.R;
+import com.example.a91927.triplepet.util.NotiReceiver;
 import com.example.a91927.triplepet.view.BasePetView;
 import com.example.a91927.triplepet.view.PikachuView;
 
@@ -36,11 +42,15 @@ public class BackService extends Service {
     DrawRunnable drawRunnable = new DrawRunnable();
     DisturbRunnable disturbRunnable = new DisturbRunnable();
     Handler handler;
+    //noti
+    Notification notification;
+    NotificationManager notiManager;
+    int myNotiId = 33333;
     @Override
     public IBinder onBind(Intent intent) {
         return null;
     }
-
+    @Override
     public void onCreate() {
         super.onCreate();
         context = getApplicationContext();
@@ -54,10 +64,16 @@ public class BackService extends Service {
         handler = new Handler();
         handler.post(drawRunnable);
         handler.post(disturbRunnable);
+        //noti
+        initNotification();
     }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         return super.onStartCommand(intent, flags, startId);
+    }
+    @Override
+    public void onDestroy() {
+        notiManager.cancel(myNotiId);
     }
     BasePetView initPetView() {
         BasePetView petView;
@@ -86,6 +102,35 @@ public class BackService extends Service {
         layoutParams.height = petView.getH();
 //        layoutParams.format = -3; // 透明
     }
+    void initNotification() {
+        notification = new Notification();
+        notiManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
+        Intent notiIntent = new Intent();
+        notiIntent.setAction("MyNotiReceive");
+        Intent realintent = new Intent();
+        notiIntent.putExtra("name1", "Pikachu");
+        notiIntent.putExtra("number", 33.0f);
+        notiIntent.putExtra("real", realintent);
+        PendingIntent pdintent = PendingIntent.getBroadcast(
+                this, 0, notiIntent, 0);
+        notification.defaults = Notification.DEFAULT_SOUND;
+        notification.flags = Notification.FLAG_NO_CLEAR;
+        notification.tickerText = "我的宠物";
+        notification.contentIntent = pdintent;
+        notification.int
+        notification.icon = R.drawable.pika_largest;
+        notification.when = System.currentTimeMillis();
+        notification.contentView = new RemoteViews(getPackageName(),
+                R.layout.noti);
+        notification.contentView.setImageViewResource(R.id.iv_pet, R.drawable.pika_largest);
+        notification.contentView.setTextViewText(R.id.tv_hello, "Pikachu");
+        notiManager.notify(myNotiId, notification);
+        //
+        NotiReceiver notiReceiver = new NotiReceiver();
+        IntentFilter inf = new IntentFilter();
+        inf.addAction("MyNotiReceive");
+        this.registerReceiver(notiReceiver, inf);
+    }
 
     class DrawRunnable implements Runnable {
         @Override
@@ -98,12 +143,10 @@ public class BackService extends Service {
                 else if(petView.getTouchAnimAlpha()) {
                     petView.startAlphaAnimation();
                     petView.setUntouchable(true);
-                    handler.postDelayed(new StopAnimRunnable(), 2000);
                 }
                 else if(petView.getTouchAnimSize()) {
                     petView.startSizeAnimation();
                     petView.setUntouchable(true);
-                    handler.postDelayed(new StopSizeAnimRunnable(), 2000);
                 }
 //                else {
                     int x = (int)petView.getX();
@@ -138,32 +181,6 @@ public class BackService extends Service {
             try {
                 petView.setIdx((petView.getIdx() + 1) % petView.getNumOfBmp() );
                 handler.postDelayed(disturbRunnable , 500);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    class StopAnimRunnable implements Runnable {
-        @Override
-        public void run() {
-            try {
-                petView.stopAnimation();
-                petView.setUntouchable(false);
-                Log.i("stop", "stop");
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    class StopSizeAnimRunnable implements Runnable {
-        @Override
-        public void run() {
-            try {
-                petView.stopSizeAnimation();
-                petView.setUntouchable(false);
-                Log.i("stop", "stop");
             }
             catch (Exception e) {
                 e.printStackTrace();

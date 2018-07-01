@@ -90,6 +90,9 @@ public class PikachuView extends BasePetView {
         super.onDraw(canvas);
         Paint paint = new Paint();
         paint.setColor(Color.BLUE);
+        if(animAlpha != null && animAlpha.isPaused()) {
+            currentPetAlphaVal.alpha = 1.0f;
+        }
         //alpha anim
         paint.setAlpha((int)(currentPetAlphaVal.alpha * 255));
         //size anim
@@ -216,6 +219,19 @@ public class PikachuView extends BasePetView {
         animAlpha.setRepeatCount(Animation.ABSOLUTE);
         animAlpha.setInterpolator(new LinearInterpolator());//设置插值器
         animAlpha.start();
+        this.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (animAlpha.isRunning()) {
+                    animAlpha.cancel();
+                }
+                touchAnimAlpha = false;
+                touchinx = -1;
+                touchiny = -1;
+                currentPetAlphaVal.alpha =1.0f;
+                setUntouchable(false);
+            }
+        }, 2000);
     }
     public void startSizeAnimation() {
         float rate = boom_rate;
@@ -240,25 +256,19 @@ public class PikachuView extends BasePetView {
         animSize.setRepeatCount(Animation.ABSOLUTE);
         animSize.setInterpolator(new LinearInterpolator());//设置插值器
         animSize.start();
-    }
-    public void stopAnimation() {
-//        anim.end();
-//        anim.cancel();
-        animAlpha.pause();
-        //clean
-        touchAnimAlpha = false;
-        touchinx = -1;
-        touchiny = -1;
-        currentPetAlphaVal.alpha =1.0f;
-    }
-    public void stopSizeAnimation() {
-        animSize.pause();
-        touchAnimSize = false;
-        touchinx = -1;
-        touchiny = -1;
-//        currentPetSizeVal.W = init_size;
-//        currentPetSizeVal.H = init_size;
-        pet_state = PET_STATE.ONBOOM;
+        this.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (animSize.isRunning()) {
+                    animSize.cancel();
+                }
+                touchAnimSize = false;
+                touchinx = -1;
+                touchiny = -1;
+                pet_state = PET_STATE.ONBOOM;
+                setUntouchable(true);
+            }
+        }, 2000);
     }
 
 }
