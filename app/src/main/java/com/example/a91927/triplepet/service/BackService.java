@@ -107,17 +107,14 @@ public class BackService extends Service {
         notiManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
         Intent notiIntent = new Intent();
         notiIntent.setAction("MyNotiReceive");
-        Intent realintent = new Intent();
         notiIntent.putExtra("name1", "Pikachu");
         notiIntent.putExtra("number", 33.0f);
-        notiIntent.putExtra("real", realintent);
         PendingIntent pdintent = PendingIntent.getBroadcast(
                 this, 0, notiIntent, 0);
         notification.defaults = Notification.DEFAULT_SOUND;
         notification.flags = Notification.FLAG_NO_CLEAR;
         notification.tickerText = "我的宠物";
         notification.contentIntent = pdintent;
-        notification.int
         notification.icon = R.drawable.pika_largest;
         notification.when = System.currentTimeMillis();
         notification.contentView = new RemoteViews(getPackageName(),
