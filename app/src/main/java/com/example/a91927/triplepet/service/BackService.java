@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.AnimationDrawable;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
@@ -46,6 +47,8 @@ public class BackService extends Service {
     Notification notification;
     NotificationManager notiManager;
     int myNotiId = 33333;
+    //t
+    public AnimationDrawable anmDraw_sprite;
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -107,10 +110,10 @@ public class BackService extends Service {
         notiManager = (NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE);
         Intent notiIntent = new Intent();
         notiIntent.setAction("MyNotiReceive");
-        notiIntent.putExtra("name1", "Pikachu");
-        notiIntent.putExtra("number", 33.0f);
+        notiIntent.putExtra("type", "Pikachu");
+        notiIntent.putExtra("name", "狗儿子");
         PendingIntent pdintent = PendingIntent.getBroadcast(
-                this, 0, notiIntent, 0);
+                this, myNotiId, notiIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         notification.defaults = Notification.DEFAULT_SOUND;
         notification.flags = Notification.FLAG_NO_CLEAR;
         notification.tickerText = "我的宠物";
@@ -137,27 +140,18 @@ public class BackService extends Service {
                     windowManager.removeViewImmediate(petView);
                     return;
                 }
-                else if(petView.getTouchAnimAlpha()) {
-                    petView.startAlphaAnimation();
-                    petView.setUntouchable(true);
-                }
-                else if(petView.getTouchAnimSize()) {
-                    petView.startSizeAnimation();
-                    petView.setUntouchable(true);
-                }
-//                else {
-                    int x = (int)petView.getX();
-                    int y = (int)petView.getY();
-                    layoutParams.x = x;
-                    layoutParams.y = y;
-                    //
-                    int w = petView.getW();
-                    int h = petView.getH();
-                    layoutParams.width = w;
-                    layoutParams.height = h;
+                int x = (int)petView.getX();
+                int y = (int)petView.getY();
+                layoutParams.x = x;
+                layoutParams.y = y;
+                //
+                int w = petView.getW();
+                int h = petView.getH();
+                layoutParams.width = w;
+                layoutParams.height = h;
 //                Log.i("log", String.format("size:%d %d", w, h));
-                    petView.invalidate();
-                    windowManager.updateViewLayout(petView, layoutParams);
+                petView.invalidate();
+                windowManager.updateViewLayout(petView, layoutParams);
 //                }
 //                if(petView.getOnPressing())
                 handler.post(drawRunnable);

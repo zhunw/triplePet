@@ -1,7 +1,10 @@
 package com.example.a91927.triplepet.view;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -12,25 +15,40 @@ import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
+import android.graphics.drawable.AnimationDrawable;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
+import android.widget.Toast;
 
 import com.example.a91927.triplepet.R;
 import com.example.a91927.triplepet.util.PetAlphaEvaluator;
 import com.example.a91927.triplepet.util.PetAlphaValue;
+import com.example.a91927.triplepet.util.PetPosiEvaluator;
+import com.example.a91927.triplepet.util.PetPosiValue;
 import com.example.a91927.triplepet.util.PetSizeEvaluator;
 import com.example.a91927.triplepet.util.PetSizeValue;
 
+import java.util.Random;
+
 import static java.lang.Math.min;
+import static java.lang.Thread.sleep;
 
 public class PikachuView extends BasePetView {
     ValueAnimator animAlpha = new ValueAnimator();
     ValueAnimator animSize = new ValueAnimator();
+    ValueAnimator animPosi = new ValueAnimator();
     PetAlphaValue currentPetAlphaVal = new PetAlphaValue(1.0f);
     PetSizeValue currentPetSizeVal = new PetSizeValue(init_size, init_size);
+    PetPosiValue currentPetPosiVal = new PetPosiValue(0f, 0f);
+    Bitmap[] bmpL2RAnimArray;
+    final int numOfToRightAnim = 5;
+    Bitmap[] bmpR2LAnimArray;
+    final int numOfToLeftAnim = 5;
+
     /* ************************** */
     public PikachuView(Context context) {
         super(context);
@@ -42,20 +60,17 @@ public class PikachuView extends BasePetView {
         if(currentPetAlphaVal != null)
             Log.i("log", "currentPetVal not null");
         initValues();
-//        W = 100;
-//        H = 100;
-//        x = 100;
-//        y = 100;
         setFocusable(true);
-        //sharedPreferences = context.getSharedPreferences("com.tencent.xidian.ourpet_preferences",Context.MODE_PRIVATE);
-//        SharedPreferences sp = context.getSharedPreferences(context.getString(R.string.our_pets_settings), Context.MODE_PRIVATE);
         res = context.getResources();
         measureScreen();
         Log.i("log", String.format("w:%d, h:%d", screenW, screenH));
-//        init(sp);
         initBmp();
+        initPosiBmp();
+        initToLeftBmp();
         //test
         bmp_tmp = BitmapFactory.decodeResource(res, R.drawable.pika_largest);
+//        pet_state = PET_STATE.NORMAL;
+//        pet_state = PET_STATE.IN_ANIM_POSI;
     }
     public PikachuView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -79,6 +94,22 @@ public class PikachuView extends BasePetView {
         hide_right = BitmapFactory.decodeResource(res, R.drawable.hide_right);
 //        bmpArray[0] = BitmapFactory.decodeResource(getResources(), R.raw.stand_1);
     }
+    private void initPosiBmp() {
+        bmpL2RAnimArray = new Bitmap[numOfToRightAnim];
+        String str = "walk_to_right";
+        for(int i = 1; i <= numOfBmp; i++) {
+            String name = str + Integer.toString(i);// + ".png";
+            bmpL2RAnimArray[i-1] = decodeResource(res, getDrawableID(name));
+        }
+    }
+    private void initToLeftBmp() {
+        bmpR2LAnimArray = new Bitmap[numOfToLeftAnim];
+        String str = "walk_to_left";
+        for(int i = 1; i <= numOfBmp; i++) {
+            String name = str + Integer.toString(i);// + ".png";
+            bmpR2LAnimArray[i-1] = decodeResource(res, getDrawableID(name));
+        }
+    }
     protected void initValues() {
         W = (int)currentPetSizeVal.W;
         H = (int)currentPetSizeVal.H;
@@ -90,9 +121,6 @@ public class PikachuView extends BasePetView {
         super.onDraw(canvas);
         Paint paint = new Paint();
         paint.setColor(Color.BLUE);
-        if(animAlpha != null && animAlpha.isPaused()) {
-            currentPetAlphaVal.alpha = 1.0f;
-        }
         //alpha anim
         paint.setAlpha((int)(currentPetAlphaVal.alpha * 255));
         //size anim
@@ -105,7 +133,6 @@ public class PikachuView extends BasePetView {
                 }
                 else {
                     drawedBitmap = bmpArray[idx];
-//                    idx = (idx+1) % numOfBmp;
                 }
                 break;
             case HIDE_LEFT:
@@ -126,18 +153,38 @@ public class PikachuView extends BasePetView {
                 else
                     drawedBitmap = bmpArray[0];
                 break;
+            case L2R:
+                x = currentPetPosiVal.x;
+                y = currentPetPosiVal.y;
+                float single = (screenW-W)/(float)numOfToRightAnim/3; //每个区间长度
+                int tmpidx = (int)(x/single);
+                tmpidx = tmpidx % numOfToRightAnim;
+                drawedBitmap = bmpL2RAnimArray[tmpidx];
+                break;
+            case R2L:
+                x = currentPetPosiVal.x;
+                y = currentPetPosiVal.y;
+                float single_ = (screenW-W)/(float)numOfToLeftAnim/3; //每个区间长度
+                int tmpidx_ = (int)(x/single_);
+                tmpidx = tmpidx_ % numOfToLeftAnim;
+                drawedBitmap = bmpR2LAnimArray[tmpidx];
+                break;
         }
 
-//        Log.i("idx", Integer.toString(idx));
-//        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.sheep);
         int bmpW = drawedBitmap.getWidth();
         int bmpH = drawedBitmap.getHeight();
         Rect blgRecS = new Rect(0, 0, bmpW, bmpH);
         Rect blgRecD = new Rect(0, 0, W, H);
 //        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);//绘制透明色
         canvas.drawBitmap(drawedBitmap, blgRecS, blgRecD, paint);
-        canvas.drawRect(0, 0, W/4, H/4, paint);
-        canvas.drawRect(3*W/4, 3*H/4, W, H, paint);
+        Paint rectp = new Paint();
+        rectp.setColor(Color.YELLOW);
+        rectp.setAlpha((int)(50));
+//        rectp.set
+        canvas.drawRect(0, 0, W/4, H/4, rectp);
+        canvas.drawRect(3*W/4, 3*H/4, W, H, rectp);
+        canvas.drawRect(0, 3*H/4, W/4, H, rectp);
+        canvas.drawRect(3*W/4, 0, W, H/4, rectp);
     }
 
     public boolean onTouchEvent(MotionEvent event) {
@@ -145,11 +192,21 @@ public class PikachuView extends BasePetView {
             return true;
         touchX = event.getRawX();
         touchY = event.getRawY();
+        touchinx = event.getX();
+        touchiny = event.getY();
         //for special ainm
-        touchinx = -1;
-        touchiny = -1;
+//        touchinx = -1;
+//        touchiny = -1;
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
+                if(touchinx >= 0 && touchinx < W/4 && touchiny < H/4 && touchiny >= 0 ) //up-left
+                    startAlphaAnimation();
+                if(touchinx > 3*W/4 && touchiny > 3*H/4 ) //down-right
+                    startL2RAnimation();
+                if(touchinx >= 0 && touchinx < W/4 && touchiny > 3*H/4 ) //down-left
+                    startR2LAnimation();
+                if(touchinx > 3*W/4 && touchiny < H/4 && touchiny >= 0 ) //up-right
+                    startSizeAnimation();
 //                Log.i("log", String.format("touch %d %d", touchinx, touchiny));
                 if(pet_state == PET_STATE.ONBOOM) {
                     currentPetSizeVal.W = init_size;
@@ -157,10 +214,7 @@ public class PikachuView extends BasePetView {
                     pet_state = PET_STATE.NORMAL;
                 }
                 touchDownTime = System.currentTimeMillis();
-                touchinx = event.getX();
-                touchiny = event.getY();
                 if(!onPressing) onPressing = true;
-//                onActionChange(FLAG_UP);
                 titleBarH = touchY - event.getY() - y;
                 break;
             case MotionEvent.ACTION_MOVE:
@@ -169,14 +223,10 @@ public class PikachuView extends BasePetView {
                 y = touchY - H/2 - titleBarH;
                 break;
             case MotionEvent.ACTION_UP:
-                //clean
-                touchAnimAlpha = false;
-                touchAnimSize = false;
+
                 if(onPressing) onPressing = false;
                 titleBarH = 0;
                 diffTime = System.currentTimeMillis() - touchDownTime;
-                Log.i("log", String.format("%d", diffTime));
-
                 // 贴边
                 if(x < 50) {
                     x = 0;
@@ -186,24 +236,16 @@ public class PikachuView extends BasePetView {
                     x = screenW - W;
                     pet_state = PET_STATE.HIDE_RIGHT;
                 }
-                else
+                else if(pet_state != PET_STATE.ONBOOM && pet_state != PET_STATE.L2R && pet_state!=PET_STATE.R2L)
                     pet_state = PET_STATE.NORMAL;
 
                 break;
         }
-//        diffTime = System.currentTimeMillis() - touchDownTime;
-
-        if( diffTime < 400 ) {
-            if(touchinx >= 0 && touchinx < W/4 && touchiny < H/4 && touchiny >= 0 )
-                touchAnimAlpha = true;
-            if(touchinx > 3*W/4 && touchiny > 3*H/4 )
-                touchAnimSize = true;
-        }
-        //
         return true;
     }
     //anim
     public void startAlphaAnimation() {
+        setUntouchable(true);
         PetAlphaValue startVal = new PetAlphaValue(1.0f);
         PetAlphaValue endVal = new PetAlphaValue(0.0f);
         animAlpha = ValueAnimator.ofObject(new PetAlphaEvaluator(), startVal, endVal);
@@ -214,26 +256,21 @@ public class PikachuView extends BasePetView {
                 invalidate();
             }
         });
+        animAlpha.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                currentPetAlphaVal.alpha = 1.0f;
+                setUntouchable(false);
+            }
+        });
         animAlpha.setDuration(2000);
-//        animAlpha.setRepeatCount(Animation.INFINITE);
         animAlpha.setRepeatCount(Animation.ABSOLUTE);
         animAlpha.setInterpolator(new LinearInterpolator());//设置插值器
         animAlpha.start();
-        this.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (animAlpha.isRunning()) {
-                    animAlpha.cancel();
-                }
-                touchAnimAlpha = false;
-                touchinx = -1;
-                touchiny = -1;
-                currentPetAlphaVal.alpha =1.0f;
-                setUntouchable(false);
-            }
-        }, 2000);
     }
     public void startSizeAnimation() {
+        setUntouchable(true);
         float rate = boom_rate;
         float tmpw = W * rate;
         float tmph = H * rate;
@@ -251,24 +288,91 @@ public class PikachuView extends BasePetView {
                 invalidate();
             }
         });
+        animSize.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                pet_state = PET_STATE.ONBOOM;
+                setUntouchable(false);
+            }
+        });
         animSize.setDuration(2000);
-//        animSize.setRepeatCount(Animation.INFINITE);
         animSize.setRepeatCount(Animation.ABSOLUTE);
         animSize.setInterpolator(new LinearInterpolator());//设置插值器
         animSize.start();
-        this.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                if (animSize.isRunning()) {
-                    animSize.cancel();
-                }
-                touchAnimSize = false;
-                touchinx = -1;
-                touchiny = -1;
-                pet_state = PET_STATE.ONBOOM;
-                setUntouchable(true);
-            }
-        }, 2000);
-    }
 
+    }
+    public void startL2RAnimation() {
+        Log.i("anim", "herre");
+        setUntouchable(true);
+        pet_state = PET_STATE.L2R;
+        float fromx = x, tox = screenW-W;
+        Random r = new Random();
+        int step = r.nextInt(10);
+        step = 5-step;
+        float fromy = y, toy = y + (step*screenH/10);
+        if(toy < 0) toy = 0;
+        if(toy > screenH-H) toy = screenH-H;
+        float distance = screenW - W;
+        int dura = (int)((distance-x)/distance * 3000);
+        PetPosiValue startVal = new PetPosiValue(fromx, fromy);
+        PetPosiValue endVal = new PetPosiValue(tox, toy);
+        animPosi = ValueAnimator.ofObject(new PetPosiEvaluator(), startVal, endVal);
+        animPosi.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                currentPetPosiVal = (PetPosiValue) animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+        animPosi.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                pet_state = PET_STATE.HIDE_RIGHT;
+                setUntouchable(false);
+            }
+        });
+        animPosi.setDuration(dura);
+        animPosi.setRepeatCount(Animation.ABSOLUTE);
+        animPosi.setInterpolator(new LinearInterpolator());//设置插值器
+        animPosi.start();
+    }
+    public void startR2LAnimation() {
+        tmpx = x;
+        setUntouchable(true);
+        pet_state = PET_STATE.R2L;
+        float fromx = x, tox = 0;
+        Log.i("log", "tox"+Float.toString(tox));
+        Random r = new Random();
+        int step = r.nextInt(10);
+        step = 5-step;
+        float fromy = y, toy = y + (step*screenH/10);
+        if(toy < 0) toy = 0;
+        if(toy > screenH-H) toy = screenH-H;
+        float distance = screenW - W;
+        int dura = (int)(x/distance * 3000);
+        PetPosiValue startVal = new PetPosiValue(fromx, fromy);
+        PetPosiValue endVal = new PetPosiValue(tox, toy);
+        animPosi = ValueAnimator.ofObject(new PetPosiEvaluator(), startVal, endVal);
+        animPosi.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                currentPetPosiVal = (PetPosiValue) animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+        animPosi.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                pet_state = PET_STATE.HIDE_LEFT;
+                setUntouchable(false);
+            }
+        });
+        animPosi.setDuration(dura);
+        animPosi.setRepeatCount(Animation.ABSOLUTE);
+        animPosi.setInterpolator(new LinearInterpolator());//设置插值器
+        animPosi.start();
+    }
 }

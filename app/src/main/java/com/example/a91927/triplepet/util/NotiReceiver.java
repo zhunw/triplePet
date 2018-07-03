@@ -13,9 +13,8 @@ public class NotiReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
 //        Intent real = intent.getParcelableExtra("real");
 //        Intent real = intent;
-//        String str = real.getStringExtra("name1");
-//        float f = real.getFloatExtra("number", 100f);
-//        String s1 = Float.toString(f);
-        Toast.makeText(context, "push", Toast.LENGTH_SHORT).show();
+        String type = intent.getStringExtra("type");
+        String name = intent.getStringExtra("name");
+        Toast.makeText(context, "我是"+type+"，我是你的"+name, Toast.LENGTH_LONG).show();
     }
 }

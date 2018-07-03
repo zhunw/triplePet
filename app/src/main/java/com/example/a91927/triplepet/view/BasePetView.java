@@ -50,15 +50,15 @@ public class BasePetView extends View {
     protected  Bitmap hide_right;
     protected  Bitmap bmp_tmp;
 
-    protected enum PET_STATE {NORMAL, HIDE_LEFT, HIDE_RIGHT, ONBOOM};
-    protected  PET_STATE pet_state = PET_STATE.NORMAL;
+    public enum PET_STATE {NORMAL, HIDE_LEFT, HIDE_RIGHT, ONBOOM, L2R, R2L};
+    public   PET_STATE pet_state = PET_STATE.NORMAL;
 
     long diffTime;
-    boolean touchAnimAlpha = false;
-    boolean touchAnimSize = false;
     boolean untouchable = false;
     final int init_size = 300;
     final float boom_rate = 1.5f;
+
+    float tmpx, tmpy;
 
     protected int numOfBmp;
     protected int idx = 0;
@@ -104,8 +104,8 @@ public class BasePetView extends View {
     }
     public void startAlphaAnimation() {return; }
     public void startSizeAnimation() {return; }
-    public void stopAnimation() { return;}
-    public void stopSizeAnimation() { return;}
+    public void startL2RAnimation() {return;}
+    public void startR2LAnimation() {return;}
     /********************************************************************/
     /**测量屏幕高宽,由于会出现屏幕旋转问题，所以需要改变*/
     public void measureScreen(){
@@ -155,16 +155,20 @@ public class BasePetView extends View {
     public long getDiffTime() {
         return diffTime;
     }
-    public boolean getTouchAnimAlpha() {
-        return touchAnimAlpha;
-    }
-    public boolean getTouchAnimSize() {
-        return touchAnimSize;
-    }
     public int  getRawID(String Name) {
         int resId = 0;
         try {
             resId = R.raw.class.getField(Name).getInt(null);
+        }
+        catch (Exception exp) {
+            Log.i("exp", exp.getMessage());
+        }
+        return resId;
+    }
+    public int  getDrawableID(String Name) {
+        int resId = 0;
+        try {
+            resId = R.drawable.class.getField(Name).getInt(null);
         }
         catch (Exception exp) {
             Log.i("exp", exp.getMessage());

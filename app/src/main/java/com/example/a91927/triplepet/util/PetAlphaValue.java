@@ -8,5 +8,7 @@ public class PetAlphaValue {
 
     public PetAlphaValue(float al) {
         alpha = al;
+//        if(alpha == 0.0f)
+//            alpha = 1.0f;
     }
 }
