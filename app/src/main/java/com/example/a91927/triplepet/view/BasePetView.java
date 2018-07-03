@@ -1,5 +1,8 @@
 package com.example.a91927.triplepet.view;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -13,10 +16,19 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.util.TypedValue;
 import android.view.MotionEvent;
+import android.view.animation.Animation;
+import android.view.animation.LinearInterpolator;
 
 import com.example.a91927.triplepet.R;
+import com.example.a91927.triplepet.util.PetAlphaEvaluator;
+import com.example.a91927.triplepet.util.PetAlphaValue;
+import com.example.a91927.triplepet.util.PetPosiValue;
+import com.example.a91927.triplepet.util.PetSizeEvaluator;
+import com.example.a91927.triplepet.util.PetSizeValue;
 
 import java.util.List;
+
+import static java.lang.Math.min;
 
 public class BasePetView extends View {
     /**画笔*/
@@ -50,12 +62,12 @@ public class BasePetView extends View {
     protected  Bitmap hide_right;
     protected  Bitmap bmp_tmp;
 
-    public enum PET_STATE {NORMAL, HIDE_LEFT, HIDE_RIGHT, ONBOOM, L2R, R2L};
-    public   PET_STATE pet_state = PET_STATE.NORMAL;
+    public enum PET_STATE {NORMAL, HIDE_LEFT, HIDE_RIGHT, ONBOOM, L2R, R2L, PRIVATE};
+    public PET_STATE pet_state = PET_STATE.NORMAL;
 
     long diffTime;
     boolean untouchable = false;
-    final int init_size = 300;
+    int init_height, init_width;
     final float boom_rate = 1.5f;
 
     float tmpx, tmpy;
@@ -63,21 +75,19 @@ public class BasePetView extends View {
     protected int numOfBmp;
     protected int idx = 0;
     protected Bitmap[] bmpArray;
+    //动画抽象距离，用于控制时间
+    protected float distance;
+    public int delayTime = 500;
 
     /* ************* zhunw end ************* */
-    /**用户选择的动画数组，随机出现*/
-    protected List<Integer> actionGroup;
-    /***************标识,常量************************/
-    /**是否绘制时间,是否能绘制*/
-    protected boolean drawTime;
-    /**当前是否绘制时间,前提是drawTime=true*/
-    protected boolean drawTimeNow;
-    /**绘制时间标识数*/
-    protected int drawTimeFlag;
-    /**动画标识*/
-    protected int actionFlag;
-    /**单个动画变化标识*/
-    protected int frameFlag;
+    /**  重构的成员 **/
+    protected ValueAnimator animAlpha = new ValueAnimator();
+    protected ValueAnimator animSize = new ValueAnimator();
+    protected ValueAnimator animPosi = new ValueAnimator();
+    protected PetAlphaValue currentPetAlphaVal = new PetAlphaValue(1.0f);
+    protected PetSizeValue currentPetSizeVal ;
+    protected PetPosiValue currentPetPosiVal = new PetPosiValue(0f, 0f);
+
     //获取人物大小配置文件
 //    protected SharedPreferences sharedPreferences;
     public BasePetView(Context context) {
@@ -102,15 +112,20 @@ public class BasePetView extends View {
     public boolean onTouchEvent(MotionEvent event) {
         return true;
     }
-    public void startAlphaAnimation() {return; }
-    public void startSizeAnimation() {return; }
-    public void startL2RAnimation() {return;}
-    public void startR2LAnimation() {return;}
     /********************************************************************/
     /**测量屏幕高宽,由于会出现屏幕旋转问题，所以需要改变*/
     public void measureScreen(){
         screenH = res.getDisplayMetrics().heightPixels;
         screenW = res.getDisplayMetrics().widthPixels;
+        init_height = (int)(screenH * 0.2);
+        init_width = init_height;
+    }
+    protected void initValues() {
+        currentPetSizeVal = new PetSizeValue(init_width, init_height);
+        W = (int)currentPetSizeVal.W;
+        H = (int)currentPetSizeVal.H;
+        x = 300;
+        y = 500;
     }
     /** 获得坐标x */
     public float getX(){
@@ -186,5 +201,65 @@ public class BasePetView extends View {
     }
     public void setUntouchable(boolean b) {
         untouchable = b;
+    }
+
+    //重构的函数
+    public void startAlphaAnimation() {
+        setUntouchable(true);
+        PetAlphaValue startVal = new PetAlphaValue(1.0f);
+        PetAlphaValue endVal = new PetAlphaValue(0.0f);
+        animAlpha = ValueAnimator.ofObject(new PetAlphaEvaluator(), startVal, endVal);
+        animAlpha.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                currentPetAlphaVal = (PetAlphaValue) animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+        animAlpha.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                currentPetAlphaVal.alpha = 1.0f;
+                setUntouchable(false);
+            }
+        });
+        animAlpha.setDuration(2000);
+        animAlpha.setRepeatCount(Animation.ABSOLUTE);
+        animAlpha.setInterpolator(new LinearInterpolator());//设置插值器
+        animAlpha.start();
+    }
+    public void startSizeAnimation() {
+        setUntouchable(true);
+        float rate = boom_rate;
+        float tmpw = W * rate;
+        float tmph = H * rate;
+//        if (tmpw > screenW) tmpw = screenW;
+//        if (tmph > screenH) tmph = screenH;
+//        float tmps = min(tmph, tmpw);
+//        tmph = tmpw = tmps;
+        PetSizeValue startVal = new PetSizeValue(init_width, init_height);
+        PetSizeValue endVal = new PetSizeValue(tmpw, tmph);
+        animSize = ValueAnimator.ofObject(new PetSizeEvaluator(), startVal, endVal);
+        animSize.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                currentPetSizeVal = (PetSizeValue) animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+        animSize.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                pet_state = PET_STATE.ONBOOM;
+                setUntouchable(false);
+            }
+        });
+        animSize.setDuration(2000);
+        animSize.setRepeatCount(Animation.ABSOLUTE);
+        animSize.setInterpolator(new LinearInterpolator());//设置插值器
+        animSize.start();
+
     }
 }

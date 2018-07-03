@@ -12,8 +12,6 @@ public class PetAlphaEvaluator implements TypeEvaluator {
             PetAlphaValue startObj = (PetAlphaValue) start;
             PetAlphaValue endObj = (PetAlphaValue) end;
             float x = startObj.alpha + fraction * (endObj.alpha - startObj.alpha);
-//            if(x == endObj.alpha)
-//                x = startObj.alpha;
             PetAlphaValue petValues = new PetAlphaValue(x);
             return petValues;
         }

@@ -26,7 +26,10 @@ import android.widget.Toast;
 import com.example.a91927.triplepet.R;
 import com.example.a91927.triplepet.util.NotiReceiver;
 import com.example.a91927.triplepet.view.BasePetView;
+import com.example.a91927.triplepet.view.ChopperView;
+import com.example.a91927.triplepet.view.LuffyView;
 import com.example.a91927.triplepet.view.PikachuView;
+import com.example.a91927.triplepet.view.ZoroView;
 
 import static java.lang.Thread.sleep;
 
@@ -39,7 +42,10 @@ public class BackService extends Service {
     WindowManager windowManager;
     WindowManager.LayoutParams layoutParams = new WindowManager.LayoutParams();
     BasePetView petView;
-    String petType = "Pikachu";
+//    String petType = "Pikachu";
+//    String petType = "Zoro";
+//    String petType = "Luffy";
+    String petType = "CHOPPER";
     DrawRunnable drawRunnable = new DrawRunnable();
     DisturbRunnable disturbRunnable = new DisturbRunnable();
     Handler handler;
@@ -83,6 +89,15 @@ public class BackService extends Service {
         switch(petType) {
             case "Pikachu":
                 petView = new PikachuView(this);
+                break;
+            case "Zoro":
+                petView = new ZoroView(this);
+                break;
+            case "Luffy":
+                petView = new LuffyView(this);
+                break;
+            case "CHOPPER":
+                petView = new ChopperView(this);
                 break;
             default:
                 petView = new PikachuView(this);
@@ -171,7 +186,7 @@ public class BackService extends Service {
         public void run() {
             try {
                 petView.setIdx((petView.getIdx() + 1) % petView.getNumOfBmp() );
-                handler.postDelayed(disturbRunnable , 500);
+                handler.postDelayed(disturbRunnable , petView.delayTime);
             }
             catch (Exception e) {
                 e.printStackTrace();

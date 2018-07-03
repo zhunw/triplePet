@@ -13,6 +13,7 @@ import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.LinearInterpolator;
 
@@ -21,97 +22,112 @@ import com.example.a91927.triplepet.util.PetAlphaEvaluator;
 import com.example.a91927.triplepet.util.PetAlphaValue;
 import com.example.a91927.triplepet.util.PetPosiEvaluator;
 import com.example.a91927.triplepet.util.PetPosiValue;
+import com.example.a91927.triplepet.util.PetProgressEvaluator;
+import com.example.a91927.triplepet.util.PetProgressValue;
 import com.example.a91927.triplepet.util.PetSizeEvaluator;
 import com.example.a91927.triplepet.util.PetSizeValue;
 
+import com.example.a91927.triplepet.R;
+
 import java.util.Random;
 
-import static java.lang.Math.min;
+public class ZoroView extends BasePetView {
+    enum ZORO_STATE {BASE, EAT, FALL};
+    ZORO_STATE zoro_state = ZORO_STATE.BASE;
 
-public class PikachuView extends BasePetView {
-    Bitmap[] bmpL2RAnimArray;
-    final int numOfToRightAnim = 5;
+    PetProgressValue currentPetProgressVal = new PetProgressValue(0f);
+    PetPosiValue currentPetFallVal = new PetPosiValue(0f, 0f);
+    //
+    Bitmap[] bmpEatAnimArray;
+    final int numOfEatAnim = 3;
     Bitmap[] bmpR2LAnimArray;
-    final int numOfToLeftAnim = 5;
+    final int numOfToLeftAnim = 3;
+    Bitmap[] bmpFallAnimArray;
+    final int numOfFallAnim = 4;
+    //
+    float fallStartY, fallEndY;
 
-    /* ************************** */
-    public PikachuView(Context context) {
+    public ZoroView(Context context) {
         super(context);
         paint = new Paint();
         paint.setColor(Color.WHITE);
         paint.setStrokeWidth(20);
         paint.setAntiAlias(true);
         paint.setFilterBitmap(true);
-        if(currentPetAlphaVal != null)
-            Log.i("log", "currentPetVal not null");
         setFocusable(true);
         res = context.getResources();
         measureScreen();
         initValues();
         Log.i("log", String.format("w:%d, h:%d", screenW, screenH));
+        Log.i("log", String.format("W:%d, H:%d", W, H));
         initBmp();
-        initToRightBmp();
+        initEatBmp();
         initToLeftBmp();
-    }
-    public PikachuView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-    }
-
-    public PikachuView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
+        initFallBmp();
     }
 
 
     /* **************************** */
     protected void initBmp() {
-        numOfBmp = 5;
+        numOfBmp = 3;
         bmpArray = new Bitmap[numOfBmp];
-        String str = "stand_";
+        String str = "zoro_sleep_";
         for(int i = 1; i <= numOfBmp; i++) {
             String name = str + Integer.toString(i);// + ".png";
             bmpArray[i-1] = decodeResource(res, getRawID(name));
         }
         hide_left = BitmapFactory.decodeResource(res, R.drawable.hide_left);
         hide_right = BitmapFactory.decodeResource(res, R.drawable.hide_right);
-        bmp_tmp = BitmapFactory.decodeResource(res, R.drawable.pika_largest);
-//        bmpArray[0] = BitmapFactory.decodeResource(getResources(), R.raw.stand_1);
+        bmp_tmp = BitmapFactory.decodeResource(res, R.raw.zoro_sit);
     }
-    private void initToRightBmp() {
-        bmpL2RAnimArray = new Bitmap[numOfToRightAnim];
-        String str = "walk_to_right";
-        for(int i = 1; i <= numOfToRightAnim; i++) {
-            String name = str + Integer.toString(i);// + ".png";
-            bmpL2RAnimArray[i-1] = decodeResource(res, getDrawableID(name));
-        }
-    }
-    private void initToLeftBmp() {
-        bmpR2LAnimArray = new Bitmap[numOfToLeftAnim];
-        String str = "walk_to_left";
-        for(int i = 1; i <= numOfToLeftAnim; i++) {
-            String name = str + Integer.toString(i);// + ".png";
-            bmpR2LAnimArray[i-1] = decodeResource(res, getDrawableID(name));
+    private void initFallBmp() {
+        bmpFallAnimArray = new Bitmap[numOfFallAnim];
+        String str = "zoro_fall_";
+        for(int i = 1; i <= numOfFallAnim; i++) {
+            String name = str + Integer.toString(i);
+            bmpFallAnimArray[i-1] = decodeResource(res, getRawID(name));
         }
     }
 
+    private void initToLeftBmp() {
+        bmpR2LAnimArray = new Bitmap[numOfToLeftAnim];
+        String str = "zoro_walk_";
+        for(int i = 1; i <= numOfToLeftAnim; i++) {
+            String name = str + Integer.toString(i);
+            bmpR2LAnimArray[i-1] = decodeResource(res, getRawID(name));
+        }
+    }
+
+    private void initEatBmp() {
+        bmpEatAnimArray = new Bitmap[numOfEatAnim];
+        String str = "zoro_eat_";
+        for(int i = 1; i <= numOfEatAnim; i++) {
+            String name = str + Integer.toString(i);
+            bmpEatAnimArray[i-1] = decodeResource(res, getRawID(name));
+        }
+    }
+    //
+    @Override
+    public void measureScreen(){
+        screenH = res.getDisplayMetrics().heightPixels;
+        screenW = res.getDisplayMetrics().widthPixels;
+        init_height = (int)(screenH * 0.2);
+        init_width = (int)(init_height*0.7045);
+        delayTime = 800;
+    }
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         Paint paint = new Paint();
         paint.setColor(Color.BLUE);
-        //alpha anim
         paint.setAlpha((int)(currentPetAlphaVal.alpha * 255));
-        //size anim
         W = (int)currentPetSizeVal.W;
         H = (int)currentPetSizeVal.H;
         int tmpidx = 0;
+        float single_ = 100f;
         switch(pet_state) {
             case NORMAL:
-                if(onPressing) {
-                    drawedBitmap = bmpArray[0];
-                }
-                else {
                     drawedBitmap = bmpArray[idx];
-                }
                 break;
             case HIDE_LEFT:
                 if(hide_left != null)
@@ -131,22 +147,34 @@ public class PikachuView extends BasePetView {
                 else
                     drawedBitmap = bmpArray[0];
                 break;
-            case L2R:
-                x = currentPetPosiVal.x;
-                y = currentPetPosiVal.y;
-                float single = (screenW-W)/(float)numOfToRightAnim/3; //每个区间长度
-                tmpidx = (int)(x/single);
-                tmpidx = tmpidx % numOfToRightAnim;
-                drawedBitmap = bmpL2RAnimArray[tmpidx];
-                break;
             case R2L:
                 x = currentPetPosiVal.x;
                 y = currentPetPosiVal.y;
-                float single_ = (screenW-W)/(float)numOfToLeftAnim/3; //每个区间长度
-                int tmpidx_ = (int)(x/single_);
-                tmpidx = tmpidx_ % numOfToLeftAnim;
+                single_ = (screenW-W)/(float)numOfToLeftAnim/3; //每个区间长度
+                tmpidx = (int)(x/single_);
+                tmpidx = tmpidx % numOfToLeftAnim;
                 drawedBitmap = bmpR2LAnimArray[tmpidx];
                 break;
+            case PRIVATE:
+                switch(zoro_state) {
+                    case BASE:
+                            drawedBitmap = bmpArray[idx];
+                        break;
+                    case EAT:
+                        float progress = currentPetProgressVal.progress;
+                        single_ = (100f)/(float)numOfEatAnim/3; //每个区间长度
+                        tmpidx = (int)(progress/single_);
+                        tmpidx = tmpidx % numOfEatAnim;
+                        drawedBitmap = bmpEatAnimArray[tmpidx];
+                        break;
+                    case FALL:
+                        y = currentPetFallVal.y;
+                        single_ = (distance)/(float)numOfFallAnim; //每个区间长度
+                        tmpidx = (int)((y-fallStartY)/single_);
+                        tmpidx = tmpidx % numOfFallAnim;
+                        drawedBitmap = bmpFallAnimArray[tmpidx];
+                        break;
+                }
         }
 
         int bmpW = drawedBitmap.getWidth();
@@ -156,15 +184,14 @@ public class PikachuView extends BasePetView {
 //        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);//绘制透明色
         canvas.drawBitmap(drawedBitmap, blgRecS, blgRecD, paint);
         Paint rectp = new Paint();
-        rectp.setColor(Color.YELLOW);
+        rectp.setColor(Color.GREEN);
         rectp.setAlpha((int)(50));
-//        rectp.set
         canvas.drawRect(0, 0, W/4, H/4, rectp);
         canvas.drawRect(3*W/4, 3*H/4, W, H, rectp);
         canvas.drawRect(0, 3*H/4, W/4, H, rectp);
         canvas.drawRect(3*W/4, 0, W, H/4, rectp);
+        canvas.drawRect(0, 3.0f/8*H, W/4, 5.0f/8*H, rectp);
     }
-
     public boolean onTouchEvent(MotionEvent event) {
         if(untouchable)
             return true;
@@ -177,11 +204,13 @@ public class PikachuView extends BasePetView {
                 if(touchinx >= 0 && touchinx < W/4 && touchiny < H/4 && touchiny >= 0 ) //up-left
                     startAlphaAnimation();
                 if(touchinx > 3*W/4 && touchiny > 3*H/4 ) //down-right
-                    startL2RAnimation();
+                    startEatAnimation();
                 if(touchinx >= 0 && touchinx < W/4 && touchiny > 3*H/4 ) //down-left
-                    startR2LAnimation();
+                    startFallAnimation();
                 if(touchinx > 3*W/4 && touchiny < H/4 && touchiny >= 0 ) //up-right
                     startSizeAnimation();
+                if(touchinx >= 0 && touchinx < W/4 && touchiny < H*5.0f/8 && touchiny >= 3.0f/8*H)
+                    startR2LAnimation();
 //                Log.i("log", String.format("touch %d %d", touchinx, touchiny));
                 if(pet_state == PET_STATE.ONBOOM) {
                     currentPetSizeVal.W = init_width;
@@ -211,35 +240,63 @@ public class PikachuView extends BasePetView {
                     x = screenW - W;
                     pet_state = PET_STATE.HIDE_RIGHT;
                 }
-                else if(pet_state != PET_STATE.ONBOOM && pet_state != PET_STATE.L2R &&
-                        pet_state!=PET_STATE.R2L && pet_state!=PET_STATE.PRIVATE)
+                else if(pet_state != PET_STATE.ONBOOM && pet_state != PET_STATE.L2R
+                        && pet_state!=PET_STATE.R2L && pet_state!=PET_STATE.PRIVATE)
                     pet_state = PET_STATE.NORMAL;
 
                 break;
         }
         return true;
     }
-    //anim
-    public void startL2RAnimation() {
-        Log.i("anim", "herre");
+
+    void startEatAnimation() {
         setUntouchable(true);
-        pet_state = PET_STATE.L2R;
-        float fromx = x, tox = screenW-W;
-        Random r = new Random();
-        int step = r.nextInt(10);
-        step = 5-step;
-        float fromy = y, toy = y + (step*screenH/10);
-        if(toy < 0) toy = 0;
-        if(toy > screenH-H) toy = screenH-H;
-        float distance = screenW - W;
-        int dura = (int)((distance-x)/distance * 3000);
+        pet_state = PET_STATE.PRIVATE;
+        zoro_state = ZORO_STATE.EAT;
+        PetProgressValue startVal = new PetProgressValue(0f);
+        PetProgressValue endVal = new PetProgressValue(100f);
+        distance = 100f - 0f;
+        animAlpha = ValueAnimator.ofObject(new PetProgressEvaluator(), startVal, endVal);
+        animAlpha.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                currentPetProgressVal = (PetProgressValue) animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+        animAlpha.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                currentPetProgressVal.progress = 0.0f;
+                pet_state = PET_STATE.NORMAL;
+                zoro_state = ZORO_STATE.BASE;
+                setUntouchable(false);
+            }
+        });
+        animAlpha.setDuration(2000);
+        animAlpha.setRepeatCount(Animation.ABSOLUTE);
+        animAlpha.setInterpolator(new LinearInterpolator());//设置插值器
+        animAlpha.start();
+    }
+
+    void startFallAnimation() {
+        setUntouchable(true);
+        pet_state = PET_STATE.PRIVATE;
+        zoro_state = ZORO_STATE.FALL;
+        float fromx = x, tox = x;
+        float fromy = y, toy = screenH-H-20;
+        fallStartY = y;
+        fallEndY = screenH-H-20;
+        distance = screenH-H-20;
+        int dura = (int)((distance-y)/distance * 3000);
         PetPosiValue startVal = new PetPosiValue(fromx, fromy);
         PetPosiValue endVal = new PetPosiValue(tox, toy);
         animPosi = ValueAnimator.ofObject(new PetPosiEvaluator(), startVal, endVal);
         animPosi.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                currentPetPosiVal = (PetPosiValue) animation.getAnimatedValue();
+                currentPetFallVal = (PetPosiValue) animation.getAnimatedValue();
                 invalidate();
             }
         });
@@ -247,13 +304,16 @@ public class PikachuView extends BasePetView {
             @Override
             public void onAnimationEnd(Animator animation) {
                 super.onAnimationEnd(animation);
-                pet_state = PET_STATE.HIDE_RIGHT;
+                pet_state = PET_STATE.NORMAL;
+                zoro_state = ZORO_STATE.BASE;
                 setUntouchable(false);
+                invalidate();
             }
         });
         animPosi.setDuration(dura);
         animPosi.setRepeatCount(Animation.ABSOLUTE);
         animPosi.setInterpolator(new LinearInterpolator());//设置插值器
+        animPosi.setInterpolator(new AccelerateInterpolator());
         animPosi.start();
     }
     public void startR2LAnimation() {
@@ -284,6 +344,7 @@ public class PikachuView extends BasePetView {
             public void onAnimationEnd(Animator animation) {
                 super.onAnimationEnd(animation);
                 pet_state = PET_STATE.HIDE_LEFT;
+                zoro_state = ZORO_STATE.BASE;
                 setUntouchable(false);
             }
         });
